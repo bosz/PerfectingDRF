@@ -15,7 +15,33 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.contrib import admin
+from django.urls import path, include
+from django.contrib.auth.models import User
+from matchingapp.views import CountryViewSet,ClubViewSet,PlayerViewSet,MembershipViewSet
+from rest_framework.routers import DefaultRouter
+from django.conf.urls.static import static
+from rest_framework import routers
+from django.conf import settings
+
+
+
+
+# Routers provide an easy way of automatically determining the URL conf.
+
+router = DefaultRouter()
+router.register('api/country', CountryViewSet, basename='country')
+router.register('api/club', ClubViewSet, basename='club')
+router.register('api/player', PlayerViewSet, basename='player')
+router.register('api/membership', MembershipViewSet, basename='membership')
+
+
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),    
+    path('', include(router.urls)),
+    path('api/', include('rest_framework.urls', namespace='rest_framework')),
+
 ]
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

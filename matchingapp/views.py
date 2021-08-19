@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from rest_framework.views import APIView
 # Create your views here.
 from rest_framework import routers, serializers, viewsets, status
 from rest_framework.response import Response
@@ -9,6 +9,10 @@ from .models import Club,Country,Player,Membership
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.mail import EmailMessage, send_mail
+from django.conf import settings
+import ssl
+import smtplib
 
 class CountryViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
@@ -32,7 +36,7 @@ class ClubViewSet(viewsets.ModelViewSet):
     queryset = Club.objects.all()
     serializer_class = ClubSerializer
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter,)
-    filter_fields = ('country__name','club_membership__player__name','name')
+    search_fields = ('country__name','club_membership__player__name','name')
 
     def post(self, request, format=None):
         serializer = ClubSerializer(data=request.data, instance=request.user)
@@ -42,21 +46,29 @@ class ClubViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class PlayerViewSet(viewsets.ModelViewSet):
-    parser_classes = [MultiPartParser, FormParser]
+    # parser_classes = [MultiPartParser, FormParser]
 
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter,)
+    # print(serializers)
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter,filters.SearchFilter)
     # filter_fields = ('player__country__name',)
+    search_fields = ['name', 'age','country__name','membership__club__name']
+
 
     def post(self, request, format=None):
+        print(request.data)
         serializer = PlayerSerializer(data=request.data, instance=request.user)
         if serializer.is_valid():
             serializer.save()
+                
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
 
 
 class MembershipViewSet(viewsets.ModelViewSet):
